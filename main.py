@@ -3,7 +3,7 @@ import requests
 
 # --- SETTINGS ---
 TARGET_SENSOR_NAME = "*Finished Goods"  # Exact name from SensorPush app
-SAFE_MIN_C = 16.0 
+SAFE_MIN_C = 15.0 
 SAFE_MAX_C = 25.0
 LOW_BATTERY_THRESHOLD = 2.6  # Alert if battery falls below 2.6V
 # ----------------
@@ -46,17 +46,9 @@ def run_watchdog():
                 
                 # --- TEMPERATURE CHECK ---
                 if temp_c > SAFE_MAX_C:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C)"})
+                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C). Limit: {SAFE_MAX_C}°C"})
                 elif temp_c < SAFE_MIN_C:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C)"})
+                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C). Limit: {SAFE_MIN_C}°C"})
                 
                 # --- BATTERY CHECK ---
-                if battery_v and battery_v < LOW_BATTERY_THRESHOLD:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"🪫 *LOW BATTERY:* {current_name} is at {battery_v}V"})
-                
-                break
-    except Exception as e:
-        print(f"Error running watchdog: {e}")
-
-if __name__ == "__main__":
-    run_watchdog()
+                if battery_v and
