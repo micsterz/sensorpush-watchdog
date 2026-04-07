@@ -3,7 +3,7 @@ name: SensorPush Watchdog
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/20 * * * *'  # Changed to 20 mins to trigger a refresh
 
 jobs:
   check-temp:
