@@ -1,28 +1,20 @@
 name: SensorPush Watchdog
+
 on:
+  workflow_dispatch:
   schedule:
     - cron: '*/15 * * * *'
-  workflow_dispatch:
-
-# This tells GitHub to use Node 24 for all steps in this file
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build:
+  check-temp:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 # You can stay on v4 or v5 now
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
+        run: pip install requests
       - name: Run Script
         env:
           SENSORPUSH_EMAIL: ${{ secrets.SENSORPUSH_EMAIL }}
