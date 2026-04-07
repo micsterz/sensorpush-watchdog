@@ -2,9 +2,10 @@ import os
 import requests
 
 # --- SETTINGS ---
-TARGET_SENSOR_NAME = "*Finished Goods" 
+TARGET_SENSOR_NAME = "*Finished Goods"  # Exact name from SensorPush app
 SAFE_MIN_C = 16.0 
 SAFE_MAX_C = 25.0
+LOW_BATTERY_THRESHOLD = 2.6  # Alert if battery falls below 2.6V
 # ----------------
 
 EMAIL = os.environ.get('SENSORPUSH_EMAIL')
@@ -12,44 +13,50 @@ PASSWORD = os.environ.get('SENSORPUSH_PASSWORD')
 SLACK_WEBHOOK = os.environ.get('SLACK_WEBHOOK_URL')
 
 def run_watchdog():
-    # 1. Authenticate with SensorPush
-    auth_resp = requests.post("https://api.sensorpush.com/api/v1/oauth/authorize", 
-                              json={"email": EMAIL, "password": PASSWORD}).json()
-    
-    token_resp = requests.post("https://api.sensorpush.com/api/v1/oauth/accesstoken", 
-                               json={"authorization": auth_resp['authorization']}).json()
-    
-    headers = {"Authorization": f"Bearer {token_resp['accesstoken']}"}
-
-    # 2. Map IDs to Friendly Names
-    sensor_info = requests.post("https://api.sensorpush.com/api/v1/devices/sensors", 
-                                json={}, headers=headers).json()
-    
-    # 3. Get the latest samples
-    samples = requests.post("https://api.sensorpush.com/api/v1/samples", 
-                            json={"limit": 1}, headers=headers).json()
-
-    # 4. Filter for specific room and check bounds
-    for sensor_id, readings in samples['sensors'].items():
-        if not readings: continue
+    try:
+        # 1. Authenticate with SensorPush
+        auth_resp = requests.post("https://api.sensorpush.com/api/v1/oauth/authorize", 
+                                  json={"email": EMAIL, "password": PASSWORD}).json()
         
-        current_name = sensor_info.get(sensor_id, {}).get('name', "Unknown")
+        token_resp = requests.post("https://api.sensorpush.com/api/v1/oauth/accesstoken", 
+                                   json={"authorization": auth_resp['authorization']}).json()
         
-        if current_name == TARGET_SENSOR_NAME:
-            temp_f = readings[0]['temperature']
-            temp_c = round((temp_f - 32) * 5/9, 2)
+        headers = {"Authorization": f"Bearer {token_resp['accesstoken']}"}
+
+        # 2. Get Sensor Details (Battery info)
+        sensor_data = requests.post("https://api.sensorpush.com/api/v1/devices/sensors", 
+                                    json={}, headers=headers).json()
+        
+        # 3. Get latest samples (Temperature info)
+        samples = requests.post("https://api.sensorpush.com/api/v1/samples", 
+                                json={"limit": 1}, headers=headers).json()
+
+        # 4. Filter for specific room and check bounds
+        for sensor_id, readings in samples['sensors'].items():
+            if not readings: continue
             
-            # ALERT LOGIC: Only posts to Slack if outside safe range
-            if temp_c > SAFE_MAX_C:
-                msg = f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C). Max: {SAFE_MAX_C}°C"
-                requests.post(SLACK_WEBHOOK, json={"text": msg})
+            # Look up sensor info using the ID
+            info = sensor_data.get(sensor_id, {})
+            current_name = info.get('name', "Unknown")
+            battery_v = info.get('battery_voltage')
             
-            elif temp_c < SAFE_MIN_C:
-                msg = f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C). Min: {SAFE_MIN_C}°C"
-                requests.post(SLACK_WEBHOOK, json={"text": msg})
-            
-            # Found the target, stop the loop
-            break
+            if current_name == TARGET_SENSOR_NAME:
+                temp_f = readings[0]['temperature']
+                temp_c = round((temp_f - 32) * 5/9, 2)
+                
+                # --- TEMPERATURE CHECK ---
+                if temp_c > SAFE_MAX_C:
+                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C)"})
+                elif temp_c < SAFE_MIN_C:
+                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C)"})
+                
+                # --- BATTERY CHECK ---
+                if battery_v and battery_v < LOW_BATTERY_THRESHOLD:
+                    requests.post(SLACK_WEBHOOK, json={"text": f"🪫 *LOW BATTERY:* {current_name} is at {battery_v}V"})
+                
+                break
+    except Exception as e:
+        print(f"Error running watchdog: {e}")
 
 if __name__ == "__main__":
     run_watchdog()
