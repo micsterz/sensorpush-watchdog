@@ -2,7 +2,7 @@ import os
 import requests
 
 # --- SETTINGS ---
-TARGET_SENSOR_NAME = "Finished Goods" 
+TARGET_SENSOR_NAME = "*Finished Goods" 
 SAFE_MIN_C = 16.0 
 SAFE_MAX_C = 25.0
 # ----------------
