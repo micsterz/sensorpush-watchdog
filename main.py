@@ -46,9 +46,17 @@ def run_watchdog():
                 
                 # --- TEMPERATURE CHECK ---
                 if temp_c > SAFE_MAX_C:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C). Limit: {SAFE_MAX_C}°C"})
+                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C)"})
                 elif temp_c < SAFE_MIN_C:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C). Limit: {SAFE_MIN_C}°C"})
+                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C)"})
                 
                 # --- BATTERY CHECK ---
-                if battery_v and
+                if battery_v is not None and battery_v < LOW_BATTERY_THRESHOLD:
+                    requests.post(SLACK_WEBHOOK, json={"text": f"🪫 *LOW BATTERY:* {current_name} is at {battery_v}V"})
+                
+                break
+    except Exception as e:
+        print(f"Error running watchdog: {e}")
+
+if __name__ == "__main__":
+    run_watchdog()
