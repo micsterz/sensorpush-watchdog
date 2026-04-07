@@ -1,10 +1,12 @@
+
+
 name: SensorPush Watchdog
 
+# Scheduled workflow for SensorPush monitoring
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/20 * * * *'  # Changed to 20 mins to trigger a refresh
-
+    - cron: '*/20 * * * *'
 jobs:
   check-temp:
     runs-on: ubuntu-latest
