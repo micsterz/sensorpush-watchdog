@@ -9,10 +9,10 @@ TARGET_SENSOR_NAME = "*Finished Goods"
 SAFE_MIN_C = 15.0 
 SAFE_MAX_C = 25.0
 LOW_BATTERY_THRESHOLD = 2.6
-# ----------------
 
 @app.route("/", methods=["GET", "POST"])
-def run_watchdog(request=None):
+def run_watchdog():
+    # Use the same logic we had before
     try:
         EMAIL = os.environ.get('SENSORPUSH_EMAIL')
         PASSWORD = os.environ.get('SENSORPUSH_PASSWORD')
@@ -40,16 +40,17 @@ def run_watchdog(request=None):
                 battery_v = info.get('battery_voltage')
                 
                 if temp_c > SAFE_MAX_C:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {TARGET_SENSOR_NAME} is {temp_c}°C"})
+                    requests.post(SLACK_WEBHOOK, json={"text": f"🔥 *ALERT:* {TARGET_SENSOR_NAME} is TOO HOT ({temp_c}°C)"})
                 elif temp_c < SAFE_MIN_C:
-                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {TARGET_SENSOR_NAME} is {temp_c}°C"})
+                    requests.post(SLACK_WEBHOOK, json={"text": f"❄️ *ALERT:* {TARGET_SENSOR_NAME} is TOO COLD ({temp_c}°C)"})
                 
                 if battery_v and battery_v < LOW_BATTERY_THRESHOLD:
                     requests.post(SLACK_WEBHOOK, json={"text": f"🪫 *LOW BATTERY:* {TARGET_SENSOR_NAME} is {battery_v}V"})
                 break
         
-        return "Check Complete", 200
+        return "OK", 200
     except Exception as e:
+        print(f"Error: {e}")
         return f"Error: {e}", 500
 
 if __name__ == "__main__":
