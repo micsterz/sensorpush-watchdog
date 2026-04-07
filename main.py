@@ -2,7 +2,7 @@ import os
 import requests
 
 # --- SETTINGS ---
-TARGET_SENSOR_NAME = "7C - Temp Dry"  # <--- Change this to match your app exactly
+TARGET_SENSOR_NAME = "7C - Temp Dry" 
 SAFE_MIN_C = 16.0 
 SAFE_MAX_C = 25.0
 # ----------------
@@ -31,20 +31,23 @@ def run_watchdog():
     for sensor_id, readings in samples['sensors'].items():
         if not readings: continue
         
-        # Look up the name for this ID
         current_name = sensor_info.get(sensor_id, {}).get('name', "Unknown")
         
-        # ONLY proceed if the name matches our Target
         if current_name == TARGET_SENSOR_NAME:
             temp_f = readings[0]['temperature']
             temp_c = round((temp_f - 32) * 5/9, 2)
             
-            if temp_c > SAFE_MAX_C or temp_c < SAFE_MIN_C:
-                status = "🚨 ALERT: FINISHED GOODS ROOM"
-                msg = f"{status}\nTemperature: {temp_c}°C\nRange: {SAFE_MIN_C}°C to {SAFE_MAX_C}°C"
-                requests.post(SLACK_WEBHOOK, json={"text": msg})
+            # CHECK BOUNDS
+            if temp_c > SAFE_MAX_C:
+                msg = f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C)"
+            elif temp_c < SAFE_MIN_C:
+                msg = f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C)"
+            else:
+                # THIS IS YOUR "JUST RIGHT" MESSAGE
+                msg = f"✅ *STATUS:* {current_name} is {temp_c}°C (Within 16-25°C range)"
             
-            # Since we found our target, we can stop looking
+            # Send whatever message was generated to Slack
+            requests.post(SLACK_WEBHOOK, json={"text": msg})
             break
 
 if __name__ == "__main__":
