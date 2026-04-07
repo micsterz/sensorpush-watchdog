@@ -1,10 +1,11 @@
 import os
 import requests
 
-# --- SETTINGS (In Celsius) ---
+# --- SETTINGS ---
+TARGET_SENSOR_NAME = "7C - Temp Dry"  # <--- Change this to match your app exactly
 SAFE_MIN_C = 16.0 
 SAFE_MAX_C = 25.0
-# -----------------------------
+# ----------------
 
 EMAIL = os.environ.get('SENSORPUSH_EMAIL')
 PASSWORD = os.environ.get('SENSORPUSH_PASSWORD')
@@ -18,7 +19,7 @@ def run_watchdog():
                                json={"authorization": auth_resp['authorization']}).json()
     headers = {"Authorization": f"Bearer {token_resp['accesstoken']}"}
 
-    # 2. Get Sensor Names (to match IDs to Names)
+    # 2. Get Sensor Names
     sensor_info = requests.post("https://api.sensorpush.com/api/v1/devices/sensors", 
                                 json={}, headers=headers).json()
     
@@ -26,21 +27,25 @@ def run_watchdog():
     samples = requests.post("https://api.sensorpush.com/api/v1/samples", 
                             json={"limit": 1}, headers=headers).json()
 
-    # 4. Process and Convert
+    # 4. Filter and Process
     for sensor_id, readings in samples['sensors'].items():
         if not readings: continue
         
-        # Get friendly name from our sensor_info list, fallback to ID if not found
-        sensor_name = sensor_info.get(sensor_id, {}).get('name', sensor_id)
+        # Look up the name for this ID
+        current_name = sensor_info.get(sensor_id, {}).get('name', "Unknown")
         
-        temp_f = readings[0]['temperature']
-        temp_c = round((temp_f - 32) * 5/9, 2) # Convert F to C
-        
-        # Check thresholds in Celsius
-        if temp_c > SAFE_MAX_C or temp_c < SAFE_MIN_C:
-            status = "🔥 TOO HOT" if temp_c > SAFE_MAX_C else "❄️ TOO COLD"
-            msg = f"{status}: *{sensor_name}* is at {temp_c}°C (Threshold: {SAFE_MIN_C}-{SAFE_MAX_C}°C)"
-            requests.post(SLACK_WEBHOOK, json={"text": msg})
+        # ONLY proceed if the name matches our Target
+        if current_name == TARGET_SENSOR_NAME:
+            temp_f = readings[0]['temperature']
+            temp_c = round((temp_f - 32) * 5/9, 2)
+            
+            if temp_c > SAFE_MAX_C or temp_c < SAFE_MIN_C:
+                status = "🚨 ALERT: FINISHED GOODS ROOM"
+                msg = f"{status}\nTemperature: {temp_c}°C\nRange: {SAFE_MIN_C}°C to {SAFE_MAX_C}°C"
+                requests.post(SLACK_WEBHOOK, json={"text": msg})
+            
+            # Since we found our target, we can stop looking
+            break
 
 if __name__ == "__main__":
     run_watchdog()
