@@ -42,9 +42,9 @@ def run_watchdog():
                 msg = f"🔥 *ALERT:* {current_name} is TOO HOT ({temp_c}°C)"
             elif temp_c < SAFE_MIN_C:
                 msg = f"❄️ *ALERT:* {current_name} is TOO COLD ({temp_c}°C)"
-            else:
+          #  else:
                 # THIS IS YOUR "JUST RIGHT" MESSAGE
-                msg = f"✅ *STATUS:* {current_name} is {temp_c}°C (Within 16-25°C range)"
+          #       msg = f"✅ *STATUS:* {current_name} is {temp_c}°C (Within 16-25°C range)"
             
             # Send whatever message was generated to Slack
             requests.post(SLACK_WEBHOOK, json={"text": msg})
