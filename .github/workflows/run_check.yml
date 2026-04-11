@@ -1,12 +1,8 @@
-
-
 name: SensorPush Watchdog
 
-# Scheduled workflow for SensorPush monitoring
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '*/20 * * * *'
+  workflow_dispatch: # This stays so Cron-job.org can "push" the button
+
 jobs:
   check-temp:
     runs-on: ubuntu-latest
@@ -22,4 +18,7 @@ jobs:
           SENSORPUSH_EMAIL: ${{ secrets.SENSORPUSH_EMAIL }}
           SENSORPUSH_PASSWORD: ${{ secrets.SENSORPUSH_PASSWORD }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # If you merged the Jablotron code into main.py, add these too:
+          JABLOTRON_SESSION: ${{ secrets.JABLOTRON_SESSION }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: python main.py
