@@ -3,7 +3,7 @@ import requests
 
 # --- SETTINGS ---
 TARGET_SENSOR_NAME = "*Finished Goods"
-SAFE_MIN_C = 15.0 
+SAFE_MIN_C = 12.0 
 SAFE_MAX_C = 25.0
 LOW_BATTERY_THRESHOLD = 2.6
 
