@@ -2,7 +2,7 @@ import os
 import requests
 
 # --- SETTINGS ---
-TARGET_SENSOR_NAME = "*Finished Goods"
+TARGET_SENSOR_NAME = "SP010"
 SAFE_MIN_C = 12.0 
 SAFE_MAX_C = 25.0
 LOW_BATTERY_THRESHOLD = 2.6
