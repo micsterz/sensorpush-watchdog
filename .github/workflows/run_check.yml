@@ -1,7 +1,13 @@
 name: SensorPush Watchdog
 
 on:
-  workflow_dispatch: # This stays so Cron-job.org can "push" the button
+  workflow_dispatch:
+    inputs:
+      delivery_test:
+        description: 'Send the clearly labelled Product Store delivery test only'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   check-temp:
@@ -18,7 +24,7 @@ jobs:
           SENSORPUSH_EMAIL: ${{ secrets.SENSORPUSH_EMAIL }}
           SENSORPUSH_PASSWORD: ${{ secrets.SENSORPUSH_PASSWORD }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          # If you merged the Jablotron code into main.py, add these too:
+          PRODUCT_STORE_DELIVERY_TEST: ${{ inputs.delivery_test }}
           JABLOTRON_SESSION: ${{ secrets.JABLOTRON_SESSION }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: python main.py
